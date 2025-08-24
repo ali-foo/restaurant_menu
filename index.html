@@ -5,6 +5,96 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Restaurant Menu</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    /* Header */
+    header {
+      text-align: center;
+      padding: 30px 20px;
+      background-color: #f8f8f8;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 32px;
+      color: #333;
+    }
+    header p {
+      margin: 5px 0 0;
+      color: #777;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+    .tabs button {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 20px;
+      background-color: #eee;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .tabs button.active,
+    .tabs button:hover {
+      background-color: #e67e22;
+      color: #fff;
+    }
+
+    /* Menu Items */
+    .menu {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      padding: 20px;
+    }
+    .menuItem {
+      background-color: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      padding: 15px;
+      text-align: center;
+      width: 200px;
+      transition: transform 0.2s;
+    }
+    .menuItem:hover {
+      transform: translateY(-5px);
+    }
+    .menuItem img {
+      border-radius: 10px;
+      margin-bottom: 10px;
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+    }
+    .menuItem h3 {
+      margin: 5px 0;
+      font-size: 18px;
+      color: #333;
+    }
+    .menuItem p {
+      font-size: 14px;
+      color: #666;
+    }
+    .menuItem span {
+      font-weight: bold;
+      color: #e67e22;
+      display: block;
+      margin-top: 8px;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 15px;
+      background-color: #f8f8f8;
+      color: #555;
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -42,26 +132,55 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
     const menuSection = document.getElementById('menu');
+    const tabsContainer = document.getElementById('categoryTabs');
 
-    // Fetch and render menu items
+    let menuData = {};
+
+    // Fetch menu items from Firebase
     const menuRef = database.ref('menu');
     menuRef.on('value', snapshot => {
-      const data = snapshot.val() || {};
-      menuSection.innerHTML = '';
+      menuData = snapshot.val() || {};
+      renderCategories();
+      renderMenu(); // default show all
+    });
 
-      Object.keys(data).forEach(key => {
-        const food = data[key];
+    // Render categories as tabs
+    function renderCategories() {
+      const categories = new Set(Object.values(menuData).map(item => item.category));
+      categories.add('All'); // add "All" tab
+      tabsContainer.innerHTML = '';
+
+      categories.forEach(category => {
+        const btn = document.createElement('button');
+        btn.textContent = category;
+        btn.className = category === 'All' ? 'active' : '';
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          renderMenu(category);
+        });
+        tabsContainer.appendChild(btn);
+      });
+    }
+
+    // Render menu items filtered by category
+    function renderMenu(filterCategory = 'All') {
+      menuSection.innerHTML = '';
+      Object.keys(menuData).forEach(key => {
+        const food = menuData[key];
+        if (filterCategory !== 'All' && food.category !== filterCategory) return;
+
         const div = document.createElement('div');
         div.className = 'menuItem';
         div.innerHTML = `
-          <img src="${food.image}" alt="${food.name}" width="150">
+          <img src="${food.image}" alt="${food.name}">
           <h3>${food.name}</h3>
           <p>${food.description}</p>
           <span>$${food.price}</span>
         `;
         menuSection.appendChild(div);
       });
-    });
+    }
   </script>
 </body>
 </html>
