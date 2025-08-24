@@ -1,17 +1,22 @@
-// -------------------- Firebase Setup --------------------
+// Import Firebase modules
+import { initializeApp } from "firebase/app";
+import { getDatabase, ref, push, set, onValue } from "firebase/database";
+
+// Your Firebase config
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "your-project.firebaseapp.com",
-  databaseURL: "https://your-project-default-rtdb.firebaseio.com",
-  projectId: "your-project",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "SENDER_ID",
-  appId: "APP_ID"
+  apiKey: "AIzaSyDZjjEXgvna-_MH-2_u90jgx8LX9btYzSI",
+  authDomain: "restaurant-menu-f4198.firebaseapp.com",
+  databaseURL: "https://restaurant-menu-f4198-default-rtdb.firebaseio.com",
+  projectId: "restaurant-menu-f4198",
+  storageBucket: "restaurant-menu-f4198.appspot.com",
+  messagingSenderId: "264892502366",
+  appId: "1:264892502366:web:f696716e603f827bbbbfcf",
+  measurementId: "G-NXL76W4G32"
 };
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
 // -------------------- Utility --------------------
 function saveMenuToFirebase(menuData) {
   db.ref('menu').set(menuData);
