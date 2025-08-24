@@ -1,8 +1,4 @@
-// Import Firebase modules
-import { initializeApp } from "firebase/app";
-import { getDatabase, ref, push, set, onValue } from "firebase/database";
-
-// Your Firebase config
+// Initialize Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDZjjEXgvna-_MH-2_u90jgx8LX9btYzSI",
   authDomain: "restaurant-menu-f4198.firebaseapp.com",
@@ -14,70 +10,18 @@ const firebaseConfig = {
   measurementId: "G-NXL76W4G32"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
 // -------------------- Utility --------------------
 function saveMenuToFirebase(menuData) {
-  db.ref('menu').set(menuData);
+  database.ref('menu').set(menuData);
 }
 
 function fetchMenuFromFirebase(callback) {
-  db.ref('menu').on('value', snapshot => {
+  database.ref('menu').on('value', snapshot => {
     const data = snapshot.val();
     callback(data ? data : []);
-  });
-}
-
-// -------------------- Render Menu Page --------------------
-const menuSection = document.getElementById('menu');
-const tabsContainer = document.getElementById('categoryTabs');
-
-function renderMenu(menuData, filterCategory = null) {
-  if (!menuSection) return;
-
-  menuSection.innerHTML = '';
-  const categories = [...new Set(menuData.map(item => item.category))];
-
-  // Render category tabs
-  if (tabsContainer) {
-    tabsContainer.innerHTML = '';
-    const allBtn = document.createElement('button');
-    allBtn.className = 'tab-btn active';
-    allBtn.textContent = 'All';
-    allBtn.onclick = () => {
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      allBtn.classList.add('active');
-      renderMenu(menuData);
-    };
-    tabsContainer.appendChild(allBtn);
-
-    categories.forEach(cat => {
-      const btn = document.createElement('button');
-      btn.className = 'tab-btn';
-      btn.textContent = cat;
-      btn.onclick = () => {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        renderMenu(menuData, cat);
-      };
-      tabsContainer.appendChild(btn);
-    });
-  }
-
-  const itemsToShow = filterCategory ? menuData.filter(i => i.category === filterCategory) : menuData;
-
-  itemsToShow.forEach(food => {
-    const itemDiv = document.createElement('div');
-    itemDiv.className = 'item';
-    itemDiv.innerHTML = `
-      <img src="${food.image}" alt="${food.name}">
-      <h3>${food.name}</h3>
-      <p>${food.description}</p>
-      <span class="price">$${food.price}</span>
-    `;
-    menuSection.appendChild(itemDiv);
-    setTimeout(() => itemDiv.classList.add('show'), 50);
   });
 }
 
@@ -113,7 +57,7 @@ function renderEmployeeList() {
     div.className = 'foodItem';
     div.innerHTML = `
       <div style="display:flex; align-items:center;">
-        <img src="${food.image}" alt="${food.name}">
+        <img src="${food.image}" alt="${food.name}" width="50">
         <span>${food.name} (${food.category}) - $${food.price}</span>
       </div>
       <div>
@@ -151,7 +95,7 @@ if (form) {
     };
     if (imageFile) reader.readAsDataURL(imageFile);
     else {
-      // If editing without new image
+      // Editing without new image
       if (editIndex !== null) {
         menuData[editIndex].name = name;
         menuData[editIndex].category = category;
@@ -184,9 +128,8 @@ window.deleteItem = function(index) {
   }
 };
 
-// -------------------- Fetch menu from Firebase --------------------
+// Fetch menu from Firebase
 fetchMenuFromFirebase(data => {
   menuData = data;
-  renderMenu(menuData);
   renderEmployeeList();
 });
