@@ -1,16 +1,34 @@
-// -------------------- Data --------------------
-let menuData = JSON.parse(localStorage.getItem('menuData')) || [];
+// -------------------- Firebase Setup --------------------
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "your-project.firebaseapp.com",
+  databaseURL: "https://your-project-default-rtdb.firebaseio.com",
+  projectId: "your-project",
+  storageBucket: "your-project.appspot.com",
+  messagingSenderId: "SENDER_ID",
+  appId: "APP_ID"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
 // -------------------- Utility --------------------
-function saveData() {
-  localStorage.setItem('menuData', JSON.stringify(menuData));
+function saveMenuToFirebase(menuData) {
+  db.ref('menu').set(menuData);
+}
+
+function fetchMenuFromFirebase(callback) {
+  db.ref('menu').on('value', snapshot => {
+    const data = snapshot.val();
+    callback(data ? data : []);
+  });
 }
 
 // -------------------- Render Menu Page --------------------
 const menuSection = document.getElementById('menu');
 const tabsContainer = document.getElementById('categoryTabs');
 
-function renderMenu(filterCategory = null) {
+function renderMenu(menuData, filterCategory = null) {
   if (!menuSection) return;
 
   menuSection.innerHTML = '';
@@ -25,7 +43,7 @@ function renderMenu(filterCategory = null) {
     allBtn.onclick = () => {
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
       allBtn.classList.add('active');
-      renderMenu();
+      renderMenu(menuData);
     };
     tabsContainer.appendChild(allBtn);
 
@@ -36,7 +54,7 @@ function renderMenu(filterCategory = null) {
       btn.onclick = () => {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        renderMenu(cat);
+        renderMenu(menuData, cat);
       };
       tabsContainer.appendChild(btn);
     });
@@ -44,7 +62,6 @@ function renderMenu(filterCategory = null) {
 
   const itemsToShow = filterCategory ? menuData.filter(i => i.category === filterCategory) : menuData;
 
-  // Render menu items with animation
   itemsToShow.forEach(food => {
     const itemDiv = document.createElement('div');
     itemDiv.className = 'item';
@@ -55,12 +72,9 @@ function renderMenu(filterCategory = null) {
       <span class="price">$${food.price}</span>
     `;
     menuSection.appendChild(itemDiv);
-    setTimeout(() => itemDiv.classList.add('show'), 50); // fade-in + slide-up animation
+    setTimeout(() => itemDiv.classList.add('show'), 50);
   });
 }
-
-// Initial menu render
-renderMenu();
 
 // -------------------- Employee Panel --------------------
 const form = document.getElementById('foodForm');
@@ -68,8 +82,9 @@ const preview = document.getElementById('preview');
 const foodList = document.getElementById('foodList');
 
 let editIndex = null;
+let menuData = [];
 
-// Live image preview for add form
+// Live image preview
 if (document.getElementById('image')) {
   document.getElementById('image').addEventListener('change', e => {
     const file = e.target.files[0];
@@ -84,7 +99,7 @@ if (document.getElementById('image')) {
   });
 }
 
-// -------------------- Render Employee List --------------------
+// Render employee food list
 function renderEmployeeList() {
   if (!foodList) return;
   foodList.innerHTML = '';
@@ -93,7 +108,7 @@ function renderEmployeeList() {
     div.className = 'foodItem';
     div.innerHTML = `
       <div style="display:flex; align-items:center;">
-        <img src="${food.image}" alt="${food.name}" style="width:50px; height:50px; object-fit:cover; margin-right:10px;">
+        <img src="${food.image}" alt="${food.name}">
         <span>${food.name} (${food.category}) - $${food.price}</span>
       </div>
       <div>
@@ -105,7 +120,7 @@ function renderEmployeeList() {
   });
 }
 
-// -------------------- Add / Update Food --------------------
+// Add / Update food
 if (form) {
   form.addEventListener('submit', e => {
     e.preventDefault();
@@ -120,38 +135,32 @@ if (form) {
       const imageSrc = reader.result;
       const newFood = { name, category, price, description, image: imageSrc };
       if (editIndex !== null) {
-        menuData[editIndex] = newFood; // update
+        menuData[editIndex] = newFood;
         editIndex = null;
       } else {
-        menuData.push(newFood); // add new
+        menuData.push(newFood);
       }
-      saveData();
-      renderEmployeeList();
-      renderMenu();
+      saveMenuToFirebase(menuData);
       form.reset();
       preview.style.display = 'none';
     };
-
     if (imageFile) reader.readAsDataURL(imageFile);
     else {
-      if (editIndex !== null) { // edit without changing image
+      // If editing without new image
+      if (editIndex !== null) {
         menuData[editIndex].name = name;
         menuData[editIndex].category = category;
         menuData[editIndex].price = price;
         menuData[editIndex].description = description;
-        saveData();
-        renderEmployeeList();
-        renderMenu();
-        form.reset();
+        saveMenuToFirebase(menuData);
         editIndex = null;
-      } else {
-        alert('Please select an image!');
+        form.reset();
       }
     }
   });
 }
 
-// -------------------- Edit / Delete Functions --------------------
+// Edit / Delete functions
 window.editItem = function(index) {
   const food = menuData[index];
   document.getElementById('name').value = food.name;
@@ -165,12 +174,14 @@ window.editItem = function(index) {
 
 window.deleteItem = function(index) {
   if (confirm('Delete this item?')) {
-    menuData.splice(index,1);
-    saveData();
-    renderEmployeeList();
-    renderMenu();
+    menuData.splice(index, 1);
+    saveMenuToFirebase(menuData);
   }
 };
 
-// Initial render of employee panel
-renderEmployeeList();
+// -------------------- Fetch menu from Firebase --------------------
+fetchMenuFromFirebase(data => {
+  menuData = data;
+  renderMenu(menuData);
+  renderEmployeeList();
+});

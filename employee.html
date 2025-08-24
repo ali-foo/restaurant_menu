@@ -15,7 +15,12 @@
   <section class="employee-form">
     <form id="foodForm">
       <input type="text" id="name" placeholder="Food Name" required>
-      <input type="text" id="category" placeholder="Category (Appetizer/Main/Dessert/Drink)" required>
+<select id="category" required>
+  <option value="Appetizers">Appetizers</option>
+  <option value="Main Course">Main Course</option>
+  <option value="Desserts">Desserts</option>
+  <option value="Drinks">Drinks</option>
+</select>
       <input type="number" id="price" placeholder="Price" required>
       <textarea id="description" placeholder="Description" required></textarea>
       <input type="file" id="image" accept="image/*" required>
@@ -26,21 +31,10 @@
     <h2>Existing Food Items</h2>
     <div id="foodList"></div>
   </section>
-<!-- Edit Modal -->
-<div id="editModal" class="modal" style="display:none;">
-  <form id="editForm">
-    <h3>Edit Food Item</h3>
-    <input type="text" id="editName" placeholder="Food Name" required>
-    <input type="text" id="editCategory" placeholder="Category" required>
-    <input type="number" id="editPrice" placeholder="Price" required>
-    <textarea id="editDescription" placeholder="Description" required></textarea>
-    <input type="file" id="editImage" accept="image/*">
-    <img id="editPreview" src="" alt="Preview" style="display:none; max-width:200px; margin:10px 0;">
-    <button type="submit">Save</button>
-    <button type="button" id="closeEdit">Cancel</button>
-  </form>
-</div>
 
-  <script src="script.js"></script>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
