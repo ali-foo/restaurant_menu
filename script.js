@@ -13,42 +13,33 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
-// -------------------- Utility --------------------
-function saveMenuToFirebase(menuData) {
-  database.ref('menu').set(menuData);
-}
+let menuData = [];
+let editIndex = null;
 
-function fetchMenuFromFirebase(callback) {
-  database.ref('menu').on('value', snapshot => {
-    const data = snapshot.val();
-    callback(data ? data : []);
-  });
-}
-
-// -------------------- Employee Panel --------------------
 const form = document.getElementById('foodForm');
 const preview = document.getElementById('preview');
 const foodList = document.getElementById('foodList');
 
-let editIndex = null;
-let menuData = [];
-
-// Live image preview
-if (document.getElementById('image')) {
-  document.getElementById('image').addEventListener('change', e => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        preview.src = reader.result;
-        preview.style.display = 'block';
-      };
-      reader.readAsDataURL(file);
-    } else preview.style.display = 'none';
+// -------------------- Fetch Menu --------------------
+function fetchMenuFromFirebase(callback) {
+  database.ref('menu').on('value', snapshot => {
+    const data = snapshot.val();
+    if (data) {
+      // Convert object to array if it's an object
+      menuData = Array.isArray(data) ? data : Object.values(data);
+    } else {
+      menuData = [];
+    }
+    callback(menuData);
   });
 }
 
-// Render employee food list
+// -------------------- Save Menu --------------------
+function saveMenuToFirebase(menuData) {
+  database.ref('menu').set(menuData);
+}
+
+// -------------------- Render Employee List --------------------
 function renderEmployeeList() {
   if (!foodList) return;
   foodList.innerHTML = '';
@@ -69,7 +60,7 @@ function renderEmployeeList() {
   });
 }
 
-// Add / Update food
+// -------------------- Form Submit --------------------
 if (form) {
   form.addEventListener('submit', e => {
     e.preventDefault();
@@ -83,19 +74,21 @@ if (form) {
     reader.onload = () => {
       const imageSrc = reader.result;
       const newFood = { name, category, price, description, image: imageSrc };
+
       if (editIndex !== null) {
         menuData[editIndex] = newFood;
         editIndex = null;
       } else {
         menuData.push(newFood);
       }
+
       saveMenuToFirebase(menuData);
       form.reset();
       preview.style.display = 'none';
     };
+
     if (imageFile) reader.readAsDataURL(imageFile);
     else {
-      // Editing without new image
       if (editIndex !== null) {
         menuData[editIndex].name = name;
         menuData[editIndex].category = category;
@@ -109,7 +102,7 @@ if (form) {
   });
 }
 
-// Edit / Delete functions
+// -------------------- Edit / Delete --------------------
 window.editItem = function(index) {
   const food = menuData[index];
   document.getElementById('name').value = food.name;
@@ -128,8 +121,20 @@ window.deleteItem = function(index) {
   }
 };
 
-// Fetch menu from Firebase
-fetchMenuFromFirebase(data => {
-  menuData = data;
-  renderEmployeeList();
-});
+// -------------------- Image Preview --------------------
+if (document.getElementById('image')) {
+  document.getElementById('image').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        preview.src = reader.result;
+        preview.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    } else preview.style.display = 'none';
+  });
+}
+
+// -------------------- Initialize --------------------
+fetchMenuFromFirebase(renderEmployeeList);
